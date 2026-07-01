@@ -9,6 +9,7 @@
 <script setup lang="ts">
 import { CatalogView } from 'src/components/catalog';
 import { useMeta } from 'quasar';
+import { branding } from 'src/config/branding';
 
 useMeta({
   title: 'Ferretería VIP | Catálogo',
@@ -16,7 +17,8 @@ useMeta({
     description: { name: 'description', content: 'Catálogo de productos Ferretería VIP' },
     'og:title': { property: 'og:title', content: 'Ferretería VIP | Catálogo' },
     'og:description': { property: 'og:description', content: 'Catálogo de productos Ferretería VIP' },
-    'og:url': { property: 'og:url', content: '/catalogo' },
+    'og:image': { property: 'og:image', content: branding.siteUrl + branding.logo },
+    'og:url': { property: 'og:url', content: branding.siteUrl + '/catalogo' },
     'twitter:title': { name: 'twitter:title', content: 'Ferretería VIP | Catálogo' },
     'twitter:description': { name: 'twitter:description', content: 'Catálogo de productos Ferretería VIP' },
   },

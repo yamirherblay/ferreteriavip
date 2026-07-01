@@ -2,6 +2,7 @@ export const branding = {
   name: 'Ferretería VIP',
   slogan: 'Todo Incluido',
   logo: '/images/logo.jpeg',
+  siteUrl: 'https://ferreteriavip.vercel.app',
   hero: {
     title: 'FERRETERÍA',
     subtitle:'Herramientas, material eléctrico, grifería, cerraduras, spray, lijas y mucho más para su hogar.',
