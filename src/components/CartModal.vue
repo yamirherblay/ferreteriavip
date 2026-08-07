@@ -63,47 +63,111 @@
         </q-list>
       </q-card-section>
 
-      <q-separator class="bg-grey-3" />
+      <template v-if="cart.items.length">
+        <q-separator class="bg-grey-3" />
 
-      <q-card-section v-if="cart.items.length" class="row items-center justify-between q-gutter-sm">
-        <div class="text-subtitle1 text-weight-bold">
-          Total: {{ formatPrice(cart.total) }}
-        </div>
-        <div class="row q-gutter-sm">
-          <q-btn
-            color="positive"
-            icon="fa-brands fa-whatsapp"
-            :disable="!cart.items.length"
-            @click="buyWhatsApp"
+        <q-card-section class="q-py-md">
+          <div class="row items-center q-mb-sm">
+            <div class="text-subtitle2 text-weight-bold">Envío</div>
+            <q-space />
+            <q-btn
+              v-if="hasSavedAddress && method === 'domicilio'"
+              flat dense size="sm" color="dark" no-caps
+              icon="delete_outline"
+              label="Olvidar dirección"
+              class="olvidar-btn"
+              @click="forgetDelivery"
+            />
+          </div>
+
+          <q-btn-toggle
+            v-model="method"
+            :options="methodOptions"
+            color="secondary"
+            spread
             no-caps
-          >
-            Pedir por WhatsApp
-          </q-btn>
-          <q-btn
-            color="dark"
-            outline
-            icon="delete_sweep"
-            :disable="!cart.items.length"
-            @click="emptyCart"
-            no-caps
-          >
-            Vaciar
-          </q-btn>
-        </div>
-      </q-card-section>
+          />
+
+          <q-slide-transition>
+            <div v-show="method === 'domicilio'">
+              <q-input
+                v-model="draftName"
+                label="Nombre (opcional)"
+                outlined
+                class="q-mt-sm"
+                autocomplete="name"
+                @blur="saveDelivery"
+              />
+              <q-input
+                v-model="draftAddress"
+                label="Dirección de entrega"
+                outlined
+                type="textarea"
+                autogrow
+                class="q-mt-sm"
+                :rules="[requiredAddress]"
+                lazy-rules
+                autocomplete="street-address"
+                @blur="saveDelivery"
+              />
+              <q-input
+                v-model="draftRefs"
+                label="Puntos de referencia (opcional)"
+                outlined
+                type="textarea"
+                autogrow
+                class="q-mt-sm"
+                hint="Ej: piso 3, junto al parque"
+                autocomplete="off"
+                @blur="saveDelivery"
+              />
+            </div>
+          </q-slide-transition>
+        </q-card-section>
+
+        <q-separator class="bg-grey-3" />
+
+        <q-card-section class="row items-center justify-between q-gutter-sm">
+          <div class="text-subtitle1 text-weight-bold">
+            Total: {{ formatPrice(cart.total) }}
+          </div>
+          <div class="row q-gutter-sm">
+            <q-btn
+              color="positive"
+              icon="fa-brands fa-whatsapp"
+              :disable="!canSend"
+              @click="buyWhatsApp"
+              no-caps
+            >
+              Pedir por WhatsApp
+            </q-btn>
+            <q-btn
+              color="dark"
+              outline
+              icon="delete_sweep"
+              :disable="!cart.items.length"
+              @click="emptyCart"
+              no-caps
+            >
+              Vaciar
+            </q-btn>
+          </div>
+        </q-card-section>
+      </template>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useCartStore } from 'src/stores/cart';
 import { useQuasar } from 'quasar';
-import { whatsappConfig } from 'src/config/whatsapp';
-import type { Product } from 'src/stores/types';
+import { useWhatsApp } from 'src/composables/useWhatsApp';
+import type { Product, CartDelivery } from 'src/stores/types';
 
 const cart = useCartStore();
 const $q = useQuasar();
+const { sendCartProposal } = useWhatsApp();
 
 function effectivePrice(p: Product): number {
   return p.oferta && p.descuento ? p.descuento : p.price;
@@ -115,6 +179,60 @@ const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void }>();
 const innerVal = ref<boolean>(props.modelValue);
 watch(() => props.modelValue, (v) => (innerVal.value = v));
 watch(innerVal, (v) => emit('update:modelValue', v));
+
+const methodOptions = [
+  { label: 'A domicilio', value: 'domicilio' as const, icon: 'home' },
+  { label: 'Retiro en tienda', value: 'retiro' as const, icon: 'storefront' },
+];
+
+const method = computed<CartDelivery['method']>({
+  get: () => cart.delivery.method,
+  set: (v) => cart.setDelivery({ method: v }),
+});
+
+const draftName = ref(cart.delivery.name ?? '');
+const draftAddress = ref(cart.delivery.address ?? '');
+const draftRefs = ref(cart.delivery.refs ?? '');
+
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) {
+      draftName.value = cart.delivery.name ?? '';
+      draftAddress.value = cart.delivery.address ?? '';
+      draftRefs.value = cart.delivery.refs ?? '';
+    }
+  },
+);
+
+const hasSavedAddress = computed(() => !!cart.delivery.address?.trim());
+
+const canSend = computed(() => {
+  if (!cart.items.length) return false;
+  if (method.value === 'retiro') return true;
+  return !!draftAddress.value?.trim();
+});
+
+function requiredAddress(val: string): boolean | string {
+  return !!val?.trim() || 'Escribe la dirección de entrega';
+}
+
+function saveDelivery() {
+  cart.setDelivery({
+    method: method.value,
+    name: draftName.value,
+    address: draftAddress.value,
+    refs: draftRefs.value,
+  });
+}
+
+function forgetDelivery() {
+  cart.forgetDelivery();
+  draftName.value = '';
+  draftAddress.value = '';
+  draftRefs.value = '';
+  $q.notify({ type: 'info', message: 'Dirección olvidada', timeout: 2000, position: 'top' });
+}
 
 function inc(id: string) {
   const it = cart.items.find((i) => i.product.id === id);
@@ -138,19 +256,14 @@ function removeItemFromCart(id: string, name: string = '') {
 
 function buyWhatsApp() {
   if (!cart.items.length) return;
-  const lines: string[] = [];
-  lines.push(`Hola, quiero hacer el siguiente pedido:`);
-  cart.items.forEach((it, idx) => {
-    const label = it.product.oferta ? `${formatPrice(effectivePrice(it.product) * it.quantity)} (Oferta)` : formatPrice(effectivePrice(it.product) * it.quantity);
-    lines.push(
-      `${idx + 1}. ${it.product.name} x${it.quantity} — ${label}`,
-    );
-  });
-  lines.push('');
-  lines.push(`Total: ${formatPrice(cart.total)}`);
-  const text = encodeURIComponent(lines.join('\n'));
-  const url = `https://wa.me/${whatsappConfig.number}?text=${text}`;
-  window.open(url, '_blank');
+  saveDelivery();
+  const delivery: CartDelivery = {
+    method: method.value,
+    name: draftName.value.trim(),
+    address: method.value === 'domicilio' ? draftAddress.value.trim() : '',
+    refs: draftRefs.value.trim(),
+  };
+  sendCartProposal(cart.items, cart.total, delivery);
 }
 
 function emptyCart() {
@@ -177,5 +290,10 @@ function formatPrice(n: number): string {
   color: #E85D04;
   margin-left: 3px;
   text-transform: uppercase;
+}
+
+.olvidar-btn {
+  min-height: 36px;
+  text-emphasis-color: #E85D04;
 }
 </style>

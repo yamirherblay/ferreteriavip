@@ -4,13 +4,20 @@
       <div
         v-for="(product, index) in products"
         :key="product.id"
-        class="col-6 col-sm-6 col-md-4 col-lg-3 product-card-wrapper"
+        :class="gridClass"
         :style="{ '--i': index }"
       >
         <ProductCard
+          v-if="viewMode === 'grid'"
           :product="product"
           :show-whats-app="true"
           :show-add-to-cart="true"
+          @whatsapp="$emit('whatsapp', $event)"
+          @add-to-cart="$emit('add-to-cart', $event)"
+        />
+        <ProductListItem
+          v-else
+          :product="product"
           @whatsapp="$emit('whatsapp', $event)"
           @add-to-cart="$emit('add-to-cart', $event)"
         />
@@ -24,17 +31,27 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import ProductCard from './ProductCard.vue';
+import ProductListItem from './ProductListItem.vue';
+import type { ViewMode } from './types';
 import type { Product } from 'src/stores/types';
 
-defineProps<{
+const props = defineProps<{
   products: Product[];
+  viewMode: ViewMode;
 }>();
 
 defineEmits<{
   (e: 'whatsapp', product: Product): void;
   (e: 'add-to-cart', product: Product): void;
 }>();
+
+const gridClass = computed(() =>
+  props.viewMode === 'grid'
+    ? 'col-6 col-sm-6 col-md-4 col-lg-3 product-card-wrapper'
+    : 'col-12 product-card-wrapper',
+);
 </script>
 
 <style scoped>

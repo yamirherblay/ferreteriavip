@@ -39,6 +39,13 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface CartDelivery {
+  method: 'domicilio' | 'retiro';
+  name?: string;
+  address?: string;
+  refs?: string;
+}
+
 export interface OrderContact {
   fullName: string;
   phone: string;
