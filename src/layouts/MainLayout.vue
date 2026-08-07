@@ -28,6 +28,15 @@
           flat
           round
           dense
+          icon="help_outline"
+          class="q-ml-xs text-white"
+          aria-label="Ayuda"
+          @click="showHelp = true"
+        />
+        <q-btn
+          flat
+          round
+          dense
           icon="admin_panel_settings"
           class="q-ml-sm text-white"
           :to="adminRoute"
@@ -102,10 +111,18 @@
           label="WhatsApp"
           @click="openWhatsApp"
         />
+        <q-tab
+          name="help"
+          icon="help"
+          label="Ayuda"
+          @click="showHelp = true"
+        />
       </q-tabs>
+      
     </q-footer>
 
     <cart-modal v-model="showCart" />
+    <HelpModal v-model="showHelp" />
     <ProductPreview />
   </q-layout>
 </template>
@@ -120,11 +137,13 @@ import { useGlobalSearch } from 'src/composables/useGlobalSearch';
 import { formatWhatsAppUrl, whatsappConfig } from 'src/config/whatsapp';
 import ProductPreview from 'components/catalog/ProductPreview.vue';
 import CartModal from 'components/CartModal.vue';
+import HelpModal from 'components/HelpModal.vue';
 
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const showCart = ref(false);
+const showHelp = ref(false);
 const cart = useCartStore();
 const auth = useAuthStore();
 const adminRoute = computed(() =>
@@ -150,6 +169,12 @@ watch(() => route.path, (path) => {
 });
 
 watch(showCart, (val) => {
+  if (!val) {
+    activeTab.value = activeTabFromRoute(route.path);
+  }
+});
+
+watch(showHelp, (val) => {
   if (!val) {
     activeTab.value = activeTabFromRoute(route.path);
   }

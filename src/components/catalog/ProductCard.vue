@@ -11,13 +11,13 @@
       <div v-if="product.oferta && product.estado !== 'Agotado'" class="absolute-top-right q-pa-sm">
         <q-badge color="accent" text-color="white" label="Oferta" class="badge-oferta" />
       </div>
-      <div v-if="product.new" class="absolute-top-left q-pa-sm">
-        <q-badge color="dark" text-color="white" label="Nuevo" class="badge-new" />
+      <div v-if="product.new" class="absolute-top-left q-pa-sm badge-new-wrap">
+        <q-badge color="dark" text-color="white" label="NUEVO" class="badge-new" />
       </div>
     </q-img>
 
-    <q-card-section class="q-pa-sm">
-      <div class="card-title">{{ product.name }}</div>
+    <q-card-section class="q-pa-sm card-info">
+      <div class="card-title ellipsis-2-lines">{{ product.name }}</div>
       <div v-if="product.descripcion" class="card-desc text-grey-7 ellipsis-2-lines">
         {{ product.descripcion }}
       </div>
@@ -96,6 +96,9 @@ function formatPrice(value: number): string {
 <style scoped>
 .product-card {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   border-radius: 5px;
   overflow: hidden;
   transition:
@@ -110,6 +113,12 @@ function formatPrice(value: number): string {
 
 .product-card:hover .gold-border-top {
   border-image: linear-gradient(90deg, #c8963e, #d4a84e) 1;
+}
+
+.card-info {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-title {
@@ -145,12 +154,13 @@ function formatPrice(value: number): string {
 }
 
 .card-whatsapp-icon {
-  color: #25d366;
+  color: #ffffff;
+  background: #128C7E;
 }
 
 .card-add {
-  border-color: #c8963e;
-  color: #c8963e;
+  border-color: #825C18;
+  color: #825C18;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 0.8rem;
@@ -174,20 +184,34 @@ function formatPrice(value: number): string {
   color: #1a1a2e;
 }
 
-.badge-oferta {
+.badge-oferta,
+.badge-new {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.7rem;
   letter-spacing: 1px;
-  padding: 2px 6px;
+}
+
+.badge-oferta {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
   border-radius: 2px;
+  background: #C2410C;
+}
+
+.badge-new-wrap {
+  min-width: 0;
 }
 
 .badge-new {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 1px;
-  padding: 2px 6px;
-  border-radius: 2px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
 }
 
 .ellipsis-2-lines {
