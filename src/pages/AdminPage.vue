@@ -107,12 +107,17 @@
         </template>
         <template #body-cell-disponibilidad="props">
           <q-td :props="props">
-            <q-badge
-              :label="props.row.estado"
-              :color="props.row.estado === 'Disponible' ? 'green-7' : 'red-5'"
-              dense
-              style="font-family: 'Inter', sans-serif; font-weight: 500; padding: 2px 8px;"
-            />
+            <div class="row items-center no-wrap q-gutter-xs">
+              <q-toggle
+                :model-value="props.row.estado === 'Disponible'"
+                color="green-7"
+                dense
+                size="sm"
+                :disable="togglingId === props.row.id"
+                @update:model-value="confirmToggle(props.row)"
+              />
+              <span class="text-caption">{{ props.row.estado }}</span>
+            </div>
           </q-td>
         </template>
         <template #body-cell-oferta="props">
@@ -321,6 +326,50 @@ const filteredProducts = computed(() => {
 
 const viewDialog = ref(false);
 const viewProduct = ref<Product | null>(null);
+const togglingId = ref<string | null>(null);
+
+function confirmToggle(row: Product) {
+  const newEstado = row.estado === 'Disponible' ? 'Agotado' : 'Disponible';
+  $q.dialog({
+    title: 'Cambiar disponibilidad',
+    message: `¿Estás seguro de cambiar "${row.name}" de ${row.estado} a ${newEstado}?`,
+    cancel: { label: 'Cancelar', flat: true },
+    ok: { label: 'Aceptar', color: 'primary' },
+    persistent: true,
+  }).onOk(() => { void toggleVisibility(row, newEstado); });
+}
+
+async function toggleVisibility(row: Product, newEstado: string) {
+  togglingId.value = row.id;
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({ estado: newEstado })
+      .eq('id', row.id)
+      .eq('negocio_id', negocioId);
+    if (error) throw error;
+    const idx = products.value.findIndex((p) => p.id === row.id);
+    if (idx !== -1) {
+      const target = products.value[idx];
+      if (target) target.estado = newEstado as 'Disponible' | 'Agotado';
+    }
+    changesStore.addUpdated({ id: row.id, name: row.name });
+    $q.notify({
+      message: `"${row.name}" ahora está ${newEstado}`,
+      color: 'positive',
+      icon: 'check_circle',
+      timeout: 2000,
+    });
+  } catch {
+    $q.notify({
+      message: 'Error al cambiar disponibilidad',
+      color: 'negative',
+      icon: 'error',
+    });
+  } finally {
+    togglingId.value = null;
+  }
+}
 
 function openView(row: Product) {
   viewProduct.value = { ...row };
