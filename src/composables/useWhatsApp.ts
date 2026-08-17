@@ -1,6 +1,5 @@
 import { whatsappConfig, formatWhatsAppUrl } from 'src/config/whatsapp';
-import type { Product } from 'src/stores/types';
-import type { CartItem } from 'src/stores/types';
+import type { Product, CartItem, CartDelivery } from 'src/stores/types';
 
 export function useWhatsApp() {
   function sendProductRequest(product: Product) {
@@ -9,18 +8,16 @@ export function useWhatsApp() {
     window.open(formatWhatsAppUrl(message), '_blank');
   }
 
-  function sendCartProposal(items: CartItem[]) {
+  function sendCartProposal(items: CartItem[], total: number, delivery?: CartDelivery) {
     const itemsList = items
-      .map((item) => `${item.product.name} x${item.quantity} - ${formatProductPrice(item.product)}`)
+      .map((item) => {
+        const unit = formatProductPrice(item.product);
+        return `• ${item.product.name} x${item.quantity} - ${unit} c/u`;
+      })
       .join('\n');
 
-    const total = items.reduce((sum, item) => {
-      const price = item.product.descuento || item.product.price;
-      return sum + price * item.quantity;
-    }, 0);
-
     const totalFormatted = formatPrice(total);
-    const message = whatsappConfig.messageTemplates.cart(itemsList, totalFormatted);
+    const message = whatsappConfig.messageTemplates.cart(itemsList, totalFormatted, delivery);
     window.open(formatWhatsAppUrl(message), '_blank');
   }
 

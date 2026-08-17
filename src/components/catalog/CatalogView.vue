@@ -6,21 +6,31 @@
       @select="handleCategorySelect"
     />
 
-    <q-input
-      v-model="searchQuery"
-      dense
-      outlined
-      class="q-my-md"
-      placeholder="Buscar productos..."
-      clearable
-    >
-      <template #prepend>
-        <q-icon name="search" />
-      </template>
-    </q-input>
+    <div class="row items-center q-col-gutter-md q-my-md">
+      <div class="col">
+        <q-input
+          v-model="searchQuery"
+          dense
+          outlined
+          placeholder="Buscar productos..."
+          clearable
+        >
+          <template #prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
+      <div class="col-auto">
+        <ViewToggle
+          :view-mode="viewMode"
+          @update:view-mode="handleViewModeUpdate"
+        />
+      </div>
+    </div>
 
     <ProductGrid
       :products="displayedProducts"
+      :view-mode="viewMode"
       @whatsapp="handleWhatsApp"
       @add-to-cart="handleAddToCart"
     >
@@ -39,6 +49,8 @@ import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import ProductFilters from './ProductFilters.vue';
 import ProductGrid from './ProductGrid.vue';
+import ViewToggle from './ViewToggle.vue';
+import type { ViewMode } from './types';
 import { useProducts } from 'src/composables/useProducts';
 import { useWhatsApp } from 'src/composables/useWhatsApp';
 import { useGlobalSearch } from 'src/composables/useGlobalSearch';
@@ -55,6 +67,9 @@ const cartStore = useCartStore();
 
 const selectedCategory = ref('all');
 const { searchQuery } = useGlobalSearch();
+
+const LS_VIEW_KEY = 'ferreteriavip_catalog_view';
+const viewMode = ref<ViewMode>('grid');
 
 const PAGE_SIZE = 15;
 const visibleCount = ref(PAGE_SIZE);
@@ -113,6 +128,11 @@ function handleCategorySelect(key: string) {
   });
 }
 
+function handleViewModeUpdate(value: ViewMode) {
+  viewMode.value = value;
+  localStorage.setItem(LS_VIEW_KEY, value);
+}
+
 function handleWhatsApp(product: Product) {
   sendProductRequest(product);
 }
@@ -132,6 +152,10 @@ function capitalize(s: string): string {
 }
 
 onMounted(async () => {
+  const saved = localStorage.getItem(LS_VIEW_KEY);
+  if (saved && ['grid', 'list'].includes(saved)) {
+    viewMode.value = saved as ViewMode;
+  }
   await fetchProducts();
   if (route.query.cat && typeof route.query.cat === 'string') {
     selectedCategory.value = route.query.cat;
