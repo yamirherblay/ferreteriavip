@@ -6,7 +6,14 @@ export const whatsappConfig = {
   businessName: branding.name,
   messageTemplates: {
     product: (productName: string, price: string) =>
-      `Hola, me interesa: ${productName} - ${price}`,
+      [
+        'Hola, me interesa este producto:',
+        '',
+        `🛒 Producto: ${productName}`,
+        `💰 Precio: ${price}`,
+        '',
+        '¿Me podrías confirmar la disponibilidad? Quedo atento. Gracias.',
+      ].join('\n'),
 
     cart: (items: string, total: string, delivery?: CartDelivery) => {
       const method =
@@ -27,7 +34,11 @@ export const whatsappConfig = {
     },
 
     contact: () =>
-      `Hola, me gustaría obtener información sobre sus productos de ferretería.`,
+      [
+        'Hola 👋, me gustaría obtener información sobre sus productos de ferretería.',
+        '',
+        '¿Me podrías ayudar con disponibilidad, precios y opciones de entrega? Quedo atento a su respuesta. Gracias.',
+      ].join('\n'),
   },
 };
 

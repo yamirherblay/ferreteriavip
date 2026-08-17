@@ -10,7 +10,10 @@ export function useWhatsApp() {
 
   function sendCartProposal(items: CartItem[], total: number, delivery?: CartDelivery) {
     const itemsList = items
-      .map((item) => `${item.product.name} x${item.quantity} - ${formatProductPrice(item.product)}`)
+      .map((item) => {
+        const unit = formatProductPrice(item.product);
+        return `• ${item.product.name} x${item.quantity} - ${unit} c/u`;
+      })
       .join('\n');
 
     const totalFormatted = formatPrice(total);
