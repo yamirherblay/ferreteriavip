@@ -12,12 +12,21 @@
       </q-card-section>
 
       <div class="preview-body column items-center justify-center">
+        <div v-if="currentProduct?.name" class="preview-name q-mb-md">
+          {{ currentProduct.name }}
+        </div>
+
         <div class="preview-image-wrap">
           <q-img
             :src="currentProduct?.image || '/images/placeholder.svg'"
+            :alt="currentProduct?.name || 'Producto'"
             :ratio="1"
             class="preview-image"
           />
+        </div>
+
+        <div v-if="currentProduct?.descripcion" class="preview-desc q-mt-md">
+          {{ currentProduct.descripcion }}
         </div>
 
         <q-btn
@@ -89,6 +98,29 @@ function addToCart() {
 .preview-image {
   border-radius: 4px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.preview-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #F5F3EF;
+  text-align: center;
+  max-width: 400px;
+  line-height: 1.3;
+}
+
+.preview-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #E5E7EB;
+  text-align: center;
+  max-width: 400px;
+  white-space: pre-line;
+  overflow-wrap: break-word;
 }
 
 .preview-add {
