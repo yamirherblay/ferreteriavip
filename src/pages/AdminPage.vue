@@ -441,7 +441,7 @@ function confirmDelete(row: Product) {
 }
 
 async function handleDelete(row: Product) {
-  const ok = await deleteProduct(row.id, row.image);
+  const ok = await deleteProduct(row.id);
   if (ok) {
     const idx = products.value.findIndex((p) => p.id === row.id);
     if (idx !== -1) products.value.splice(idx, 1);
@@ -476,6 +476,7 @@ onMounted(async () => {
       .from('products')
       .select('*')
       .eq('negocio_id', negocioId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (data) {
       products.value = Array.isArray(data) ? data : [];
