@@ -283,17 +283,17 @@ async function buyWhatsApp() {
 
   sending.value = true;
   try {
-    const order = await createOrder(items, totals, delivery);
-    if (!order) {
+    const result = await createOrder(items, totals, delivery);
+    if (!result.ok) {
       $q.notify({
         type: 'negative',
-        message: 'No se pudo registrar el pedido. Revisa tu conexión e inténtalo de nuevo.',
+        message: result.error,
         timeout: 3500,
       });
       return;
     }
 
-    const orderRef = `#${order.token.slice(0, 6)}`;
+    const orderRef = `#${result.token.slice(0, 6)}`;
     const { opened, url } = sendCartProposal(items, totals, delivery, orderRef);
 
     cart.clear();

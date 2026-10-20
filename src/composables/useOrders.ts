@@ -31,6 +31,24 @@ export function clearPendingOrder() {
   localStorage.removeItem(PENDING_KEY);
 }
 
+export type CreateOrderResult =
+  | { ok: true; id: number; token: string }
+  | { ok: false; error: string };
+
+const GENERIC_ORDER_ERROR =
+  'No se pudo registrar el pedido. Revisa tu conexión e inténtalo de nuevo.';
+
+/** Error de negocio devuelto por la RPC ({ok:false, error}): se muestra el
+ *  detalle real (acotado) en vez del genérico de conexión. */
+function businessError(detail: string | undefined): string {
+  const text = (detail ?? '').trim();
+  if (!text) return GENERIC_ORDER_ERROR;
+  if (/stock/i.test(text)) {
+    return 'Producto sin stock disponible. Actualiza el catálogo e inténtalo de nuevo.';
+  }
+  return text.length > 160 ? `${text.slice(0, 157)}…` : text;
+}
+
 export function useOrders() {
   function effectivePrice(item: CartItem): number {
     const p = item.product;
@@ -41,9 +59,13 @@ export function useOrders() {
     items: CartItem[],
     totals: Record<string, number>,
     delivery?: CartDelivery,
-  ): Promise<{ id: number; token: string } | null> {
+  ): Promise<CreateOrderResult> {
     const negocio_id = getBusinessId();
-    if (!negocio_id || !items.length) return null;
+    if (!items.length) return { ok: false, error: 'El carrito está vacío.' };
+    if (!negocio_id) {
+      console.error('createOrder: VITE_NEGOCIO_ID no configurado');
+      return { ok: false, error: GENERIC_ORDER_ERROR };
+    }
 
     const token = getOrCreateToken(items);
     const payload = {
@@ -64,11 +86,22 @@ export function useOrders() {
     };
 
     const { data, error } = await supabase.rpc('create_order', payload);
+    // La RPC devuelve fallos internos como {ok:false, error} con HTTP 200,
+    // por eso además del error de PostgREST hay que revisar data.ok.
     if (error) {
-      console.error('Error createOrder:', error);
-      return null;
+      console.error('Error createOrder (rpc):', error.message ?? error);
+      return { ok: false, error: GENERIC_ORDER_ERROR };
     }
-    return data as { id: number; token: string };
+    if (!data || typeof data !== 'object') {
+      console.error('Error createOrder: respuesta vacía de la RPC');
+      return { ok: false, error: GENERIC_ORDER_ERROR };
+    }
+    const res = data as { ok?: boolean; id?: number; token?: string; error?: string };
+    if (res.ok === false || res.id == null || typeof res.token !== 'string') {
+      console.error('Error createOrder (ok:false):', res.error ?? res);
+      return { ok: false, error: businessError(res.error) };
+    }
+    return { ok: true, id: res.id, token: res.token };
   }
 
   return { createOrder, clearPendingOrder };
