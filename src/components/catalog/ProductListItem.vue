@@ -26,11 +26,11 @@
         <div class="row items-center justify-between q-mt-xs">
           <div class="list-price" :class="{ 'price-stacked': product.oferta }">
             <template v-if="product.oferta">
-              <span class="old-price">{{ formatPrice(product.price) }}</span>
-              <span class="sale-price">{{ formatPrice(product.descuento) }}</span>
+              <span class="old-price">{{ formatPrice(product.price, product.currency) }}</span>
+              <span class="sale-price">{{ formatPrice(product.descuento, product.currency) }}</span>
             </template>
             <template v-else>
-              <span class="sale-price">{{ formatPrice(product.price) }}</span>
+              <span class="sale-price">{{ formatPrice(product.price, product.currency) }}</span>
             </template>
           </div>
           <q-badge
@@ -69,16 +69,9 @@
 <script setup lang="ts">
 import type { Product } from 'src/stores/types';
 import { useProductPreview } from 'src/composables/useProductPreview';
+import { formatPrice } from 'src/utils/format';
 
 const preview = useProductPreview();
-
-function formatPrice(value: number): string {
-  return new Intl.NumberFormat('es-CU', {
-    style: 'currency',
-    currency: 'CUP',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 defineProps<{
   product: Product;

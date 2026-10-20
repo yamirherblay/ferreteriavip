@@ -44,6 +44,18 @@
       </div>
       <div class="col-6">
         <q-select
+          v-model="localProduct.currency"
+          :options="currencyOptions"
+          label="Moneda"
+          dense
+          outlined
+          emit-value
+          map-options
+          :rules="[(val) => !!val || 'La moneda es obligatoria']"
+        />
+      </div>
+      <div class="col-6">
+        <q-select
           v-model="localProduct.category"
           :options="categoryOptions"
           label="Categoría"
@@ -170,6 +182,11 @@ watch(
 const estadoOptions = [
   { label: 'Disponible', value: 'Disponible' },
   { label: 'Agotado', value: 'Agotado' },
+];
+
+const currencyOptions = [
+  { label: 'CUP', value: 'CUP' },
+  { label: 'USD', value: 'USD' },
 ];
 const subcategoryOptions = ref([
   { label: 'Mayorista', value: 'Mayorista' },
@@ -301,6 +318,7 @@ async function onSubmit() {
       departament: DEPARTAMENT,
       name: localProduct.name,
       price: localProduct.price,
+      currency: localProduct.currency || 'CUP',
       category: localProduct.category,
       subcategory: localProduct.subcategory || null,
       image: localProduct.image,

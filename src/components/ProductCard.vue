@@ -8,11 +8,11 @@
       </div>
       <div class="text-h6 q-mt-sm" :class="{'price-stacked': product.oferta}">
         <template v-if="product.oferta">
-          <span class="old-price">{{ currency(product.price) }}</span>
-          <span class="sale-price">{{ currency(product.descuento) }}</span>
+          <span class="old-price">{{ currency(product.price, product.currency) }}</span>
+          <span class="sale-price">{{ currency(product.descuento, product.currency) }}</span>
         </template>
         <template v-else>
-          <span class="sale-price">{{ currency(product.price) }}</span>
+          <span class="sale-price">{{ currency(product.price, product.currency) }}</span>
         </template>
       </div>
     </q-card-section>
@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { useCartStore } from 'src/stores/cart';
+import { formatPrice } from 'src/utils/format';
 import type { Product } from 'src/stores/types';
 
 const props = defineProps<{ product: Product }>();
@@ -33,8 +34,8 @@ const cart = useCartStore();
 function addToCart() {
   cart.add(props.product, 1);
 }
-function currency(n: number) {
-  return new Intl.NumberFormat('es-CU', { style: 'currency', currency: 'CUP' }).format(n);
+function currency(n: number, c?: string) {
+  return formatPrice(n, c);
 }
 </script>
 

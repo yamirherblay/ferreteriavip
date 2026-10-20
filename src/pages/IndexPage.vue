@@ -99,11 +99,11 @@
               <div class="shelf-name text-weight-bold">{{ product.name }}</div>
               <div class="shelf-price" :class="{'shelf-stacked': product.oferta}">
                 <template v-if="product.oferta">
-                  <span class="old-price">{{ formatPrice(product.price) }}</span>
-                  <span class="sale-price">{{ formatPrice(product.descuento) }}</span>
+                  <span class="old-price">{{ formatPrice(product.price, product.currency) }}</span>
+                  <span class="sale-price">{{ formatPrice(product.descuento, product.currency) }}</span>
                 </template>
                 <template v-else>
-                  <span class="sale-price">{{ formatPrice(product.price) }}</span>
+                  <span class="sale-price">{{ formatPrice(product.price, product.currency) }}</span>
                 </template>
               </div>
             </div>
@@ -154,6 +154,7 @@ import { defaultCategories } from 'src/config/categories';
 import { whatsappConfig, formatWhatsAppUrl } from 'src/config/whatsapp';
 import { useProducts } from 'src/composables/useProducts';
 import { useProductPreview } from 'src/composables/useProductPreview';
+import { formatPrice as formatPriceUtil } from 'src/utils/format';
 import { useMeta } from 'quasar';
 
 const preview = useProductPreview();
@@ -176,12 +177,8 @@ const featuredProducts = computed(() => {
   return [...selectedOffers, ...selectedNonOffers];
 });
 
-function formatPrice(value: number): string {
-  return new Intl.NumberFormat('es-CU', {
-    style: 'currency',
-    currency: 'CUP',
-    maximumFractionDigits: 0,
-  }).format(value);
+function formatPrice(value: number, currency?: string): string {
+  return formatPriceUtil(value, currency);
 }
 
 let observer: IntersectionObserver | null = null;

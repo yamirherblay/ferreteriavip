@@ -67,9 +67,16 @@ export const useCartStore = defineStore('cart', () => {
     return p.oferta && p.descuento ? p.descuento : p.price;
   }
 
-  const total = computed(() =>
-    items.value.reduce((s, it) => s + effectivePrice(it.product) * it.quantity, 0),
-  );
+  const totalByCurrency = computed(() => {
+    const groups: Record<string, number> = {};
+    items.value.forEach((it) => {
+      const c = it.product.currency || 'CUP';
+      groups[c] = (groups[c] || 0) + effectivePrice(it.product) * it.quantity;
+    });
+    return groups;
+  });
+
+  const currencies = computed(() => Object.keys(totalByCurrency.value).sort());
 
   function add(product: Product, qty = 1) {
     const found = items.value.find((it) => it.product.id === product.id);
@@ -97,7 +104,8 @@ export const useCartStore = defineStore('cart', () => {
   return {
     items,
     count,
-    total,
+    totalByCurrency,
+    currencies,
     delivery,
     deliveryComplete,
     add,

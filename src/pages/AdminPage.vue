@@ -102,7 +102,7 @@
         </template>
         <template #body-cell-price="props">
           <q-td :props="props" style="font-family: 'JetBrains Mono', monospace;">
-            {{ formatPrice(props.row.price) }}
+            {{ formatPrice(props.row.price, props.row.currency) }}
           </q-td>
         </template>
         <template #body-cell-disponibilidad="props">
@@ -153,7 +153,7 @@
               </div>
               <div class="q-mb-xs">
                 <span class="text-caption text-grey-7">Precio</span>
-                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: #0A2747; font-weight: 600;">{{ formatPrice(viewProduct?.price) }}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: #0A2747; font-weight: 600;">{{ formatPrice(viewProduct?.price, viewProduct?.currency) }}</div>
               </div>
               <div class="q-mb-xs">
                 <span class="text-caption text-grey-7">Categoría</span>
@@ -236,6 +236,7 @@ import { useAdminChangesStore } from 'src/stores/adminChanges';
 import { useProducts } from 'src/composables/useProducts';
 import { supabase } from 'boot/supabase';
 import { getAdminBusinessId } from 'src/config/business';
+import { formatPrice as formatPriceUtil } from 'src/utils/format';
 import type { Product } from 'src/stores/types';
 
 const products = ref<Product[]>([]);
@@ -251,6 +252,7 @@ const newProduct = ref<Product>({
   id: '',
   name: '',
   price: 0,
+  currency: 'CUP',
   category: '',
   image: '',
   new: false,
@@ -266,6 +268,7 @@ const editProduct = ref<Product>({
   id: '',
   name: '',
   price: 0,
+  currency: 'CUP',
   category: '',
   image: '',
   new: false,
@@ -299,7 +302,7 @@ const columns = <QTableColumn[]>[
     field: 'price',
     align: 'right',
     sortable: true,
-    format: (v: number) => formatPrice(v),
+    format: (v: number, row?: Product) => formatPrice(v, row?.currency),
   },
   { name: 'category', label: 'Categoría', field: 'category', align: 'left', sortable: true },
   {
@@ -387,6 +390,7 @@ function openAdd() {
     oferta: false,
     estado: 'Disponible',
     subcategory: '',
+    currency: 'CUP',
     descuento: 0,
     descripcion: '',
     negocio_id: negocioId ?? '',
@@ -460,13 +464,9 @@ async function handleDelete(row: Product) {
   }
 }
 
-function formatPrice(val?: number) {
+function formatPrice(val?: number, currency?: string) {
   if (val == null) return '-';
-  return new Intl.NumberFormat('es-CU', {
-    style: 'currency',
-    currency: 'CUP',
-    maximumFractionDigits: 0,
-  }).format(val);
+  return formatPriceUtil(val, currency);
 }
 
 onMounted(async () => {

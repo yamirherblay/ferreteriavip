@@ -5,31 +5,51 @@ export const whatsappConfig = {
   number: import.meta.env.VITE_WHATSAPP_NUMBER || '5351234567',
   businessName: branding.name,
   messageTemplates: {
-    product: (productName: string, price: string) =>
-      [
-        'Hola, me interesa este producto:',
-        '',
-        `🛒 Producto: ${productName}`,
-        `💰 Precio: ${price}`,
-        '',
-        '¿Me podrías confirmar la disponibilidad? Quedo atento. Gracias.',
-      ].join('\n'),
+    product: (productName: string, price: string, imageUrl?: string) =>
+      imageUrl
+        ? [
+            'Hola, me interesa este producto:',
+            '',
+            `🛒 Producto: ${productName}`,
+            `💰 Precio: ${price}`,
+            `🖼 Imagen: ${imageUrl}`,
+            '',
+            '¿Me podrías confirmar la disponibilidad? Quedo atento. Gracias.',
+          ].join('\n')
+        : [
+            'Hola, me interesa este producto:',
+            '',
+            `🛒 Producto: ${productName}`,
+            `💰 Precio: ${price}`,
+            '',
+            '¿Me podrías confirmar la disponibilidad? Quedo atento. Gracias.',
+          ].join('\n'),
 
-    cart: (items: string, total: string, delivery?: CartDelivery) => {
+    cart: (items: string, totalsBlock: string, delivery?: CartDelivery, reference?: string) => {
       const method =
         delivery && delivery.method === 'domicilio' ? 'A DOMICILIO' : 'RETIRO EN TIENDA';
-      const lines = ['Hola, quiero hacer el siguiente pedido:', `Tipo de envío: ${method}`];
+      const lines = [
+        'Hola, quiero hacer el siguiente pedido:',
+        '',
+        `🧾 Pedido: ${reference || '---'}`,
+        `📦 Tipo de envío: ${method}`,
+      ];
 
       if (delivery && delivery.method === 'domicilio') {
-        if (delivery.name && delivery.name.trim()) lines.push(`Nombre: ${delivery.name.trim()}`);
-        if (delivery.address && delivery.address.trim()) lines.push(`Dirección: ${delivery.address.trim()}`);
-        if (delivery.refs && delivery.refs.trim()) lines.push(`Puntos de ref: ${delivery.refs.trim()}`);
+        if (delivery.name && delivery.name.trim()) lines.push(`👤 Cliente: ${delivery.name.trim()}`);
+        if (delivery.address && delivery.address.trim())
+          lines.push(`📍 Dirección: ${delivery.address.trim()}`);
+        if (delivery.refs && delivery.refs.trim())
+          lines.push(`📌 Puntos de ref: ${delivery.refs.trim()}`);
       }
 
       lines.push('');
+      lines.push('🛒 Productos:');
       lines.push(items);
       lines.push('');
-      lines.push(`Total: ${total}`);
+      lines.push(`💰 Total: ${totalsBlock}`);
+      lines.push('');
+      lines.push('Quedo atento a su confirmación. Gracias.');
       return lines.join('\n');
     },
 

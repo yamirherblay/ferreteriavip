@@ -33,11 +33,11 @@
               <q-item-label class="text-weight-bold">{{ it.product.name }}</q-item-label>
               <q-item-label caption class="text-grey-7">
                 <template v-if="it.product.oferta">
-                  {{ formatPrice(it.product.descuento) }}
+                  {{ formatPrice(it.product.descuento, it.product.currency) }}
                   <span class="offer-tag">(Oferta)</span>
                 </template>
                 <template v-else>
-                  {{ formatPrice(it.product.price) }}
+                  {{ formatPrice(it.product.price, it.product.currency) }}
                 </template>
               </q-item-label>
               <div class="row items-center q-gutter-sm q-mt-xs">
@@ -48,7 +48,7 @@
             </q-item-section>
             <q-item-section side top>
               <div class="text-weight-bold text-h6">
-                {{ formatPrice(effectivePrice(it.product) * it.quantity) }}
+                {{ formatPrice(effectivePrice(it.product) * it.quantity, it.product.currency) }}
               </div>
               <q-btn
                 flat
@@ -129,13 +129,21 @@
 
         <q-card-section class="row items-center justify-between q-gutter-sm">
           <div class="text-subtitle1 text-weight-bold">
-            Total: {{ formatPrice(cart.total) }}
+            <template v-if="cart.currencies.length === 1 && firstCurrency">
+              Total: {{ formatPrice(cart.totalByCurrency[firstCurrency] ?? 0, firstCurrency) }}
+            </template>
+            <template v-else>
+              <div v-for="c in cart.currencies" :key="c">
+                Total {{ c }}: {{ formatPrice(cart.totalByCurrency[c] ?? 0, c) }}
+              </div>
+            </template>
           </div>
           <div class="row q-gutter-sm">
             <q-btn
               color="positive"
               icon="fa-brands fa-whatsapp"
-              :disable="!canSend"
+              :disable="!canSend || sending"
+              :loading="sending"
               @click="buyWhatsApp"
               no-caps
             >
@@ -163,11 +171,14 @@ import { ref, computed, watch } from 'vue';
 import { useCartStore } from 'src/stores/cart';
 import { useQuasar } from 'quasar';
 import { useWhatsApp } from 'src/composables/useWhatsApp';
+import { useOrders } from 'src/composables/useOrders';
+import { formatPrice } from 'src/utils/format';
 import type { Product, CartDelivery } from 'src/stores/types';
 
 const cart = useCartStore();
 const $q = useQuasar();
 const { sendCartProposal } = useWhatsApp();
+const { createOrder, clearPendingOrder } = useOrders();
 
 function effectivePrice(p: Product): number {
   return p.oferta && p.descuento ? p.descuento : p.price;
@@ -206,6 +217,8 @@ watch(
 );
 
 const hasSavedAddress = computed(() => !!cart.delivery.address?.trim());
+
+const firstCurrency = computed(() => cart.currencies[0]);
 
 const canSend = computed(() => {
   if (!cart.items.length) return false;
@@ -254,8 +267,12 @@ function removeItemFromCart(id: string, name: string = '') {
   });
 }
 
-function buyWhatsApp() {
-  if (!cart.items.length) return;
+const sending = ref(false);
+
+async function buyWhatsApp() {
+  if (!cart.items.length || sending.value) return;
+  const items = [...cart.items];
+  const totals = { ...cart.totalByCurrency };
   saveDelivery();
   const delivery: CartDelivery = {
     method: method.value,
@@ -263,7 +280,59 @@ function buyWhatsApp() {
     address: method.value === 'domicilio' ? draftAddress.value.trim() : '',
     refs: draftRefs.value.trim(),
   };
-  sendCartProposal(cart.items, cart.total, delivery);
+
+  sending.value = true;
+  try {
+    const order = await createOrder(items, totals, delivery);
+    if (!order) {
+      $q.notify({
+        type: 'negative',
+        message: 'No se pudo registrar el pedido. Revisa tu conexión e inténtalo de nuevo.',
+        timeout: 3500,
+      });
+      return;
+    }
+
+    const orderRef = `#${order.token.slice(0, 6)}`;
+    const { opened, url } = sendCartProposal(items, totals, delivery, orderRef);
+
+    cart.clear();
+    clearPendingOrder();
+
+    if (opened) {
+      $q.notify({
+        type: 'positive',
+        message: `Pedido ${orderRef} registrado. Abrimos WhatsApp para enviarlo.`,
+        timeout: 4000,
+      });
+    } else {
+      $q.notify({
+        type: 'warning',
+        message: `Pedido ${orderRef} registrado pero no pude abrir WhatsApp.`,
+        timeout: 8000,
+        actions: [
+          {
+            label: 'Abrir WhatsApp',
+            color: 'white',
+            handler: () => {
+              window.location.href = url;
+            },
+          },
+          { label: 'OK', color: 'white' },
+        ],
+      });
+    }
+    innerVal.value = false;
+  } catch (e) {
+    console.error('Error buyWhatsApp:', e);
+    $q.notify({
+      type: 'negative',
+      message: 'Error al enviar el pedido. Revisa tu conexión e inténtalo de nuevo.',
+      timeout: 3500,
+    });
+  } finally {
+    sending.value = false;
+  }
 }
 
 function emptyCart() {
@@ -272,14 +341,6 @@ function emptyCart() {
 
 function close() {
   innerVal.value = false;
-}
-
-function formatPrice(n: number): string {
-  return new Intl.NumberFormat('es-CU', {
-    style: 'currency',
-    currency: 'CUP',
-    maximumFractionDigits: 0,
-  }).format(n);
 }
 </script>
 

@@ -52,7 +52,7 @@ export function useProducts() {
       const dataToInsert = {
         ...productData,
         negocio_id: adminNegocioId,
-        currency: 'CUP',
+        currency: productData.currency || 'CUP',
         estado: productData.estado || 'Disponible',
         oferta: productData.oferta || false,
         new: productData.new || false,

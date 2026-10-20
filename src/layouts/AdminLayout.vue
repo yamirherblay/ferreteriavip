@@ -48,6 +48,22 @@
         <q-item
           clickable
           v-ripple
+          :active="$route.name === 'admin-pedidos'"
+          active-class="text-secondary bg-grey-2"
+          @click="$router.push({ name: 'admin-pedidos' })"
+        >
+          <q-item-section avatar>
+            <q-icon name="local_shipping" class="text-grey-6" />
+          </q-item-section>
+          <q-item-section class="text-weight-medium">Pedidos</q-item-section>
+          <q-item-section side v-if="ordersStore.pendingCount > 0">
+            <q-badge color="positive" text-color="white">{{ ordersStore.pendingCount }}</q-badge>
+          </q-item-section>
+        </q-item>
+
+        <q-item
+          clickable
+          v-ripple
           :active="$route.name === 'catalogo'"
           active-class="text-secondary bg-grey-2"
           @click="$router.push({ name: 'catalogo' })"
@@ -77,15 +93,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 import AdminChangeNotifications from 'layouts/AdminChangeNotifications.vue';
 import { useAuthStore } from 'src/stores/auth';
+import { useOrdersStore } from 'src/stores/orders';
 
 const left = ref(false);
 const router = useRouter();
 const auth = useAuthStore();
+const ordersStore = useOrdersStore();
+
+onMounted(() => {
+  void ordersStore.refreshStats();
+});
+
 async function logout() {
   await auth.logout();
   void router.push({ name: 'home' });
