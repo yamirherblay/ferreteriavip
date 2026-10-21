@@ -173,6 +173,7 @@ import { useQuasar } from 'quasar';
 import { useWhatsApp } from 'src/composables/useWhatsApp';
 import { useOrders } from 'src/composables/useOrders';
 import { formatPrice } from 'src/utils/format';
+import { orderCode } from 'src/utils/orderCode';
 import type { Product, CartDelivery } from 'src/stores/types';
 
 const cart = useCartStore();
@@ -293,7 +294,7 @@ async function buyWhatsApp() {
       return;
     }
 
-    const orderRef = `#${result.token.slice(0, 6)}`;
+    const orderRef = `#${orderCode(result.token)}`;
     const { opened, url } = sendCartProposal(items, totals, delivery, orderRef);
 
     cart.clear();

@@ -128,10 +128,10 @@
               no-caps
               :ripple="false"
               class="order-token-btn"
-              :aria-label="`Ver pedido ${props.row.token}`"
+              :aria-label="`Ver pedido ${orderCode(props.row.token)}`"
               @click.stop="openDetail(props.row)"
             >
-              <span class="order-token">#{{ props.row.token.slice(0, 6) }}</span>
+              <span class="order-token">#{{ orderCode(props.row.token) }}</span>
             </q-btn>
             <div class="orders-table__caption lt-md">
               {{ formatRelativeTime(props.row.created_at) }}
@@ -197,7 +197,7 @@
       <q-card :style="$q.screen.lt.md ? '' : 'max-width: 560px; width: 100%'">
         <q-card-section class="row items-center q-py-sm detail-header">
           <div class="text-subtitle1 text-weight-bold detail-title">
-            Pedido #{{ detailOrder?.token.slice(0, 6) ?? '' }}
+            Pedido #{{ detailOrder ? orderCode(detailOrder.token) : '' }}
           </div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
@@ -325,6 +325,7 @@ import {
   formatRelativeTime,
 } from 'src/utils/format';
 import { orderStatusClass } from 'src/utils/orderStatus';
+import { orderCode } from 'src/utils/orderCode';
 import { branding } from 'src/config/branding';
 
 useMeta({
@@ -455,6 +456,7 @@ const filteredOrders = computed(() => {
       if (!f) return true;
       return (
         o.token.toLowerCase().includes(f) ||
+        orderCode(o.token).toLowerCase().includes(f) ||
         String(o.id).includes(f) ||
         (o.client_name || '').toLowerCase().includes(f)
       );
