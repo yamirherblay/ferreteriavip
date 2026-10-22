@@ -32,9 +32,9 @@
           </template>
         </div>
         <q-badge
-          :color="product.estado === 'Disponible' ? 'positive' : 'negative'"
-          :text-color="'white'"
-          :label="product.estado"
+          :color="product.is_low ? 'warning' : product.estado === 'Disponible' ? 'positive' : 'negative'"
+          :text-color="product.is_low ? 'dark' : 'white'"
+          :label="product.is_low ? 'Pocas unidades' : product.estado"
           class="card-status"
         />
       </div>

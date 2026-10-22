@@ -7,6 +7,8 @@ export interface Product {
   subcategory?: string;
   currency?: string;
   estado: 'Disponible' | 'Agotado';
+  /** Aviso "pocas unidades" (booleano derivado del stock, no expone la cantidad). */
+  is_low?: boolean;
   oferta?: boolean;
   descuento: number;
   descripcion?: string;
