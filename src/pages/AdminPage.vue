@@ -244,7 +244,7 @@ const filter = ref('');
 const changesStore = useAdminChangesStore();
 const addDialog = ref(false);
 const editDialog = ref(false);
-const negocioId = getAdminBusinessId();
+const negocioId = computed(() => getAdminBusinessId());
 const $q = useQuasar();
 const { deleteProduct } = useProducts();
 
@@ -261,7 +261,7 @@ const newProduct = ref<Product>({
   subcategory: '',
   descuento: 0,
   descripcion: '',
-  negocio_id: negocioId ?? '',
+  negocio_id: negocioId.value ?? '',
 });
 
 const editProduct = ref<Product>({
@@ -277,7 +277,7 @@ const editProduct = ref<Product>({
   subcategory: '',
   descuento: 0,
   descripcion: '',
-  negocio_id: negocioId ?? '',
+  negocio_id: negocioId.value ?? '',
 });
 
 const originalEditId = ref<string | null>(null);
@@ -343,14 +343,27 @@ function confirmToggle(row: Product) {
 }
 
 async function toggleVisibility(row: Product, newEstado: string) {
+  if (!negocioId.value) {
+    $q.notify({
+      message: 'Sesión no válida. Vuelve a iniciar sesión.',
+      color: 'negative',
+      icon: 'error',
+    });
+    return;
+  }
+
   togglingId.value = row.id;
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('products')
       .update({ estado: newEstado })
       .eq('id', row.id)
-      .eq('negocio_id', negocioId);
+      .eq('negocio_id', negocioId.value)
+      .select('id');
     if (error) throw error;
+    if (!data || data.length === 0) {
+      throw new Error('No se actualizó ningún producto');
+    }
     const idx = products.value.findIndex((p) => p.id === row.id);
     if (idx !== -1) {
       const target = products.value[idx];
@@ -393,7 +406,7 @@ function openAdd() {
     currency: 'CUP',
     descuento: 0,
     descripcion: '',
-    negocio_id: negocioId ?? '',
+    negocio_id: negocioId.value ?? '',
   };
   addDialog.value = true;
 }
@@ -470,12 +483,12 @@ function formatPrice(val?: number, currency?: string) {
 }
 
 onMounted(async () => {
-  if (!negocioId) return;
+  if (!negocioId.value) return;
   try {
     const { data } = await supabase
       .from('products')
       .select('*')
-      .eq('negocio_id', negocioId)
+      .eq('negocio_id', negocioId.value)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (data) {

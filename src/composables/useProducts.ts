@@ -86,13 +86,19 @@ export function useProducts() {
     loading.value = true;
     error.value = null;
     try {
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('products')
         .update(productData)
         .eq('id', id)
-        .eq('negocio_id', adminNegocioId);
+        .eq('negocio_id', adminNegocioId)
+        .select('id');
 
       if (updateError) throw updateError;
+      if (!data || data.length === 0) {
+        throw new Error(
+          'No se actualizó ningún producto: la sesión no es válida o el producto no pertenece a tu negocio.',
+        );
+      }
       return true;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error actualizando producto';
@@ -113,14 +119,20 @@ export function useProducts() {
     loading.value = true;
     error.value = null;
     try {
-      const { error: deleteError } = await supabase
+      const { data, error: deleteError } = await supabase
         .from('products')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
         .eq('negocio_id', adminNegocioId)
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .select('id');
 
       if (deleteError) throw deleteError;
+      if (!data || data.length === 0) {
+        throw new Error(
+          'No se eliminó ningún producto: la sesión no es válida o el producto no pertenece a tu negocio.',
+        );
+      }
       products.value = products.value.filter((p) => p.id !== id);
       return true;
     } catch (e) {

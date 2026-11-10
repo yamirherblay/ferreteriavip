@@ -312,6 +312,15 @@ function onCancel() {
 
 async function onSubmit() {
   try {
+    if (!props.negocioId) {
+      $q.notify({
+        message: 'Sesión no válida. Vuelve a iniciar sesión para guardar cambios.',
+        color: 'negative',
+        icon: 'error',
+      });
+      return;
+    }
+
     const productData = {
       id: localProduct.id,
       negocio_id: props.negocioId,
@@ -340,13 +349,17 @@ async function onSubmit() {
         icon: 'check_circle',
       });
     } else {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .update(productData)
         .eq('id', localProduct.id)
-        .eq('negocio_id', props.negocioId);
+        .eq('negocio_id', props.negocioId)
+        .select('id');
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('No se actualizó ningún producto');
+      }
 
       $q.notify({
         message: 'Producto actualizado correctamente',
@@ -358,10 +371,12 @@ async function onSubmit() {
     emit('save', { ...localProduct });
   } catch (e: unknown) {
     console.error('Error guardando producto:', e);
+    const detail = e instanceof Error ? e.message : 'Error al guardar producto';
     $q.notify({
-      message: 'Error al guardar producto',
+      message: `Error al guardar producto: ${detail}`,
       color: 'negative',
       icon: 'error',
+      timeout: 5000,
     });
   }
 }

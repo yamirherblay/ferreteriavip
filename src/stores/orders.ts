@@ -127,12 +127,16 @@ export const useOrdersStore = defineStore('orders', {
       const negocioId = getAdminBusinessId();
       if (!negocioId) return false;
       try {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('order')
           .update({ status })
           .eq('id', id)
-          .eq('negocio_id', negocioId);
+          .eq('negocio_id', negocioId)
+          .select('id');
         if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error('No se actualizó ningún pedido');
+        }
         const order = this.orders.find((o) => o.id === id);
         if (order) order.status = status;
         await this.refreshStats();

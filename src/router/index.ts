@@ -23,15 +23,20 @@ export default defineRouter(function () {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  let authInitialized = false;
+  // Una única promesa de inicialización: si dos navegaciones coinciden al
+  // arrancar, ambas esperan la misma y no se registra dos veces el listener.
+  let authInitPromise: Promise<void> | null = null;
 
   router.beforeEach(async (to) => {
     const auth = useAuthStore();
 
-    if (!authInitialized) {
-      await auth.initializeAuth();
-      authInitialized = true;
+    if (!authInitPromise) {
+      authInitPromise = auth.initializeAuth().catch((e: unknown) => {
+        console.error('Error inicializando auth:', e);
+        authInitPromise = null;
+      });
     }
+    await authInitPromise;
 
     const needsAuth = to.matched.some((r) => r.meta && r.meta.requiresAuth);
     if (needsAuth && !auth.isAuthenticated) {

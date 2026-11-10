@@ -12,6 +12,11 @@ interface AuthState {
 
 const STORAGE_KEY = 'ferreteriavip_auth';
 
+// Evita registrar varias veces la suscripción de auth (navegaciones
+// concurrentes al arrancar, HMR, etc.).
+let authInitialized = false;
+let authUnsubscribe: (() => void) | null = null;
+
 function loadState(): AuthState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -30,11 +35,17 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     async fetchNegocioId(userId: string) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('negocios')
         .select('id')
         .eq('user_uuid', userId)
         .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching negocio:', error.message);
+        return;
+      }
+
       this.negocio_id = data?.id || null;
     },
 
@@ -69,42 +80,102 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       await supabase.auth.signOut();
+      this.resetAuth();
+    },
+
+    resetAuth() {
       this.isAuthenticated = false;
       this.negocio_id = null;
       this.user = null;
       this.persist();
     },
 
-    async initializeAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    subscribeToAuthChanges() {
+      if (authUnsubscribe) authUnsubscribe();
 
-      if (session?.user) {
-        this.isAuthenticated = true;
-        this.user = {
-          id: session.user.id,
-          email: session.user.email || '',
-        };
-        await this.fetchNegocioId(session.user.id);
-        this.persist();
-      }
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          this.resetAuth();
+          return;
+        }
 
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session?.user) {
+        // TOKEN_REFRESHED y USER_UPDATED no deben volver a consultar la BD:
+        // eso encadenaba getSession() → refresh → evento → otra consulta.
+        if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') {
           this.isAuthenticated = true;
           this.user = {
             id: session.user.id,
             email: session.user.email || '',
           };
-         void this.fetchNegocioId(session.user.id).then(() => this.persist());
+          this.persist();
+          return;
+        }
+
+        this.isAuthenticated = true;
+        this.user = {
+          id: session.user.id,
+          email: session.user.email || '',
+        };
+
+        // Nunca consultar la BD dentro del callback: se difiere para no
+        // reentrar en el lock de auth mientras se refresca el token.
+        if (!this.negocio_id) {
+          const userId = session.user.id;
+          queueMicrotask(() => {
+            void this.fetchNegocioId(userId).then(() => this.persist());
+          });
         } else {
-          this.isAuthenticated = false;
-          this.negocio_id = null;
-          this.user = null;
           this.persist();
         }
       });
+
+      authUnsubscribe = data.subscription.unsubscribe;
+    },
+
+    async initializeAuth() {
+      if (authInitialized) return;
+      authInitialized = true;
+
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          // Solo borramos la sesión si el error es definitivo (token inválido).
+          // Si es de red, la conservamos para poder refrescar más adelante.
+          const status = error.status ?? 0;
+          const isUnrecoverable = status === 400 || status === 401 || status === 403;
+
+          if (isUnrecoverable) {
+            console.warn('Sesión inválida. Vuelve a iniciar sesión:', error.message);
+            await supabase.auth.signOut({ scope: 'local' });
+          } else {
+            console.warn('No se pudo refrescar la sesión (posible fallo de red):', error.message);
+          }
+
+          this.resetAuth();
+        } else if (session?.user) {
+          this.isAuthenticated = true;
+          this.user = {
+            id: session.user.id,
+            email: session.user.email || '',
+          };
+          await this.fetchNegocioId(session.user.id);
+          this.persist();
+        } else {
+          // No hay sesión válida: limpia el estado persistido para no quedarse
+          // "autenticado" con un negocio_id viejo y fallar luego en silencio.
+          this.resetAuth();
+        }
+
+        this.subscribeToAuthChanges();
+      } catch (e) {
+        // Si algo inesperado falla, permitir reintentar en la próxima navegación.
+        authInitialized = false;
+        throw e;
+      }
     },
 
     persist() {
