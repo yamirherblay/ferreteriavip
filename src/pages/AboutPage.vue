@@ -26,16 +26,20 @@
 import { branding } from 'src/config/branding';
 import { useMeta } from 'quasar';
 
+const pageTitle = `Sobre nosotros | ${branding.name}`;
+const pageDescription = `Conoce ${branding.name}: herramientas y materiales para tu obra, reparación o proyecto del hogar, con atención personalizada.`;
+
 useMeta({
-  title: `Acerca de | ${branding.name}`,
+  title: pageTitle,
   meta: {
-    description: { name: 'description', content: 'Conoce Ferretería VIP, tu ferretería de confianza con todo incluido.' },
-    'og:title': { property: 'og:title', content: `Acerca de | ${branding.name}` },
-    'og:description': { property: 'og:description', content: 'Conoce Ferretería VIP, tu ferretería de confianza con todo incluido.' },
-    'og:image': { property: 'og:image', content: branding.siteUrl + branding.logo },
+    description: { name: 'description', content: pageDescription },
+    'og:title': { property: 'og:title', content: pageTitle },
+    'og:description': { property: 'og:description', content: pageDescription },
+    'og:image': { property: 'og:image', content: branding.siteUrl + branding.ogImage },
     'og:url': { property: 'og:url', content: branding.siteUrl + '/acerca' },
-    'twitter:title': { name: 'twitter:title', content: `Acerca de | ${branding.name}` },
-    'twitter:description': { name: 'twitter:description', content: 'Conoce Ferretería VIP, tu ferretería de confianza con todo incluido.' },
+    'twitter:title': { name: 'twitter:title', content: pageTitle },
+    'twitter:description': { name: 'twitter:description', content: pageDescription },
+    'twitter:image': { name: 'twitter:image', content: branding.siteUrl + branding.ogImage },
   },
 });
 </script>

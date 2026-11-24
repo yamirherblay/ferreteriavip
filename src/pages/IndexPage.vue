@@ -214,16 +214,21 @@ function openWhatsApp() {
   window.open(url, '_blank');
 }
 
+const pageTitle = `${branding.name} | Herramientas y materiales de construcción`;
+const pageDescription =
+  'Herramientas, material eléctrico, grifería, cerraduras y pintura. Pide por WhatsApp con entrega o retiro en tienda.';
+
 useMeta({
-  title: `${branding.name} | Inicio`,
+  title: pageTitle,
   meta: {
-    description: { name: 'description', content: branding.slogan },
-    'og:title': { property: 'og:title', content: `${branding.name} | Inicio` },
-    'og:description': { property: 'og:description', content: branding.slogan },
-    'og:image': { property: 'og:image', content: branding.siteUrl + branding.logo },
+    description: { name: 'description', content: pageDescription },
+    'og:title': { property: 'og:title', content: pageTitle },
+    'og:description': { property: 'og:description', content: pageDescription },
+    'og:image': { property: 'og:image', content: branding.siteUrl + branding.ogImage },
     'og:url': { property: 'og:url', content: branding.siteUrl + '/' },
-    'twitter:title': { name: 'twitter:title', content: `${branding.name} | Inicio` },
-    'twitter:description': { name: 'twitter:description', content: branding.slogan },
+    'twitter:title': { name: 'twitter:title', content: pageTitle },
+    'twitter:description': { name: 'twitter:description', content: pageDescription },
+    'twitter:image': { name: 'twitter:image', content: branding.siteUrl + branding.ogImage },
   },
 });
 </script>

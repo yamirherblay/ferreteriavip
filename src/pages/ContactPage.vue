@@ -66,16 +66,20 @@ import { branding } from 'src/config/branding';
 import { useWhatsApp } from 'src/composables/useWhatsApp';
 import { useMeta } from 'quasar';
 
+const pageTitle = `Contacto y pedidos por WhatsApp | ${branding.name}`;
+const pageDescription = `Escríbenos por WhatsApp para consultar productos, precios y entregas de ${branding.name}.`;
+
 useMeta({
-  title: `Contacto | ${branding.name}`,
+  title: pageTitle,
   meta: {
-    description: { name: 'description', content: `Contacta con ${branding.name}` },
-    'og:title': { property: 'og:title', content: `Contacto | ${branding.name}` },
-    'og:description': { property: 'og:description', content: `Contacta con ${branding.name}` },
-    'og:image': { property: 'og:image', content: branding.siteUrl + branding.logo },
+    description: { name: 'description', content: pageDescription },
+    'og:title': { property: 'og:title', content: pageTitle },
+    'og:description': { property: 'og:description', content: pageDescription },
+    'og:image': { property: 'og:image', content: branding.siteUrl + branding.ogImage },
     'og:url': { property: 'og:url', content: branding.siteUrl + '/contacto' },
-    'twitter:title': { name: 'twitter:title', content: `Contacto | ${branding.name}` },
-    'twitter:description': { name: 'twitter:description', content: `Contacta con ${branding.name}` },
+    'twitter:title': { name: 'twitter:title', content: pageTitle },
+    'twitter:description': { name: 'twitter:description', content: pageDescription },
+    'twitter:image': { name: 'twitter:image', content: branding.siteUrl + branding.ogImage },
   },
 });
 

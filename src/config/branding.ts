@@ -2,6 +2,7 @@ export const branding = {
   name: 'Ferretería VIP',
   slogan: 'Todo Incluido',
   logo: '/images/logo.jpeg',
+  ogImage: '/images/og-image.jpg',
   siteUrl: 'https://ferreteriavip.vercel.app',
   hero: {
     title: 'FERRETERÍA',
